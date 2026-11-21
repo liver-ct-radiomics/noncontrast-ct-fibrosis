@@ -4,7 +4,7 @@ Public code repository accompanying the manuscript:
 
 > *Complementing clinical markers with whole-liver radiomics for biopsy-defined liver fibrosis: A nested cross-validation study using routine non-contrast CT*
 
-## Scripts
+## Repository Contents
 
 1. **`nested_cv_pipeline.py`** — Main 20-repeat 5-fold nested cross-validation pipeline. Evaluates a priori FIB-4, the selected clinical core (`FIB-4 + sex`), exploratory post-selection consensus hybrid models (Regime 1), and within-fold L1 selection models with cohort-level (Regime 2) and training-fold-only (Regime 3) unsupervised pre-filtering across `K = 1` to `5` radiomic features. Writes `nested_cv_summary.csv`, `oof_predictions.csv`, `oof_predictions_all_k1_to_5.csv`, and `incremental_value.csv`.
 2. **`plot_figures.py`** — Generates main and supplementary evaluation figures from the out-of-fold probability tables produced by `nested_cv_pipeline.py` (both `.png` and 300-dpi LZW `.tif`, plus `dca_thresholds.csv`):
@@ -13,13 +13,13 @@ Public code repository accompanying the manuscript:
    - `Fig5`: Out-of-fold receiver operating characteristic (ROC) curves at `K = 4`.
    - `S1_Fig`: Supplementary `5 x 2` panel of flexible LOESS calibration curves and decision curves across `K = 1` to `5`.
 3. **`inner_loop_sensitivity.py`** — Additional fully nested sensitivity analysis in which clinical expansion size (`m = 0` to `4` beyond FIB-4), radiomic subset size (`K = 0` to `5`), and the L2 penalty `C` (`0.01` to `10.0`) are jointly selected by 5-fold inner cross-validation under both the one-standard-error (1-SE) rule and the maximum inner-AUC rule. Writes `inner_loop_sensitivity_summary.csv`.
-4. **`segmentation_reproducibility.py`** — Blinded dual-reader whole-liver segmentation reproducibility analysis (`TotalSegmentator` vs. Reader 1 vs. Reader 2 across 30 examinations), computing pairwise spatial overlap (`Dice`, `IoU`, `ASSD`, `HD95`) and `ICC(2,1)` with 95% confidence intervals for liver volume, mean parenchymal attenuation, and the four `K = 1` to `4` consensus radiomic features (`S1 Table`).
+4. **`LiverSegICC/`** — Standalone desktop workflow and analysis application used for the 30-patient blinded dual-reader whole-liver segmentation reproducibility substudy (`TotalSegmentator` vs. Reader 1 vs. Reader 2; `S1 Table`), including DICOM import, blinded slice-wise mask review, spatial overlap metrics (`Dice`, `IoU`, `ASSD`, `HD95`), and `ICC(2,1)` analysis. Full setup and usage instructions are provided in [`LiverSegICC/README.md`](LiverSegICC/README.md).
 
-   Note: this script does not call PyRadiomics. The substudy tool runs in a standalone Python environment outside 3D Slicer, and the four features are computed with NumPy/SciPy from the corresponding definitions at the native voxel spacing (no resampling to 1 × 1 × 1 mm): sphericity from a marching-cubes surface area; undecimated 3D Coiflet-1 filtering; a fixed bin width of 25; 26-connected gray-level zones; and 13-direction symmetric 3D gray-level co-occurrence. Values are therefore not numerically identical to the main PyRadiomics extraction.
+   Note: `LiverSegICC` runs in a standalone Python environment outside 3D Slicer and does not call PyRadiomics. The four `K = 1–4` consensus features are computed with NumPy/SciPy from the corresponding definitions at the native voxel spacing (no resampling to 1 × 1 × 1 mm): sphericity from a marching-cubes surface area; undecimated 3D Coiflet-1 filtering; a fixed bin width of 25; 26-connected gray-level zones; and 13-direction symmetric 3D gray-level co-occurrence. Values are therefore not numerically identical to the main PyRadiomics extraction.
 
 ## Usage
 
-Install dependencies:
+Install dependencies for the modeling and plotting scripts:
 
 ```bash
 pip install -r requirements.txt
@@ -43,11 +43,7 @@ python plot_figures.py --indir results --outdir figures
 python inner_loop_sensitivity.py --input LBase.txt --outdir results
 ```
 
-4. Run the segmentation reproducibility analysis on a directory of per-case NIfTI folders (`ct.nii.gz`, `TS.nii.gz`, `R1.nii.gz`, `R2.nii.gz`):
-
-```bash
-python segmentation_reproducibility.py --cases_dir path/to/cases --outdir results
-```
+4. For the dual-reader segmentation reproducibility application (`LiverSegICC`), see [`LiverSegICC/README.md`](LiverSegICC/README.md) (`setup.bat` and `run.bat`, or `python LiverSegICC/src/selftest.py` to run the verification checks).
 
 ## License
 

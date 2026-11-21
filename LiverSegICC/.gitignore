@@ -1,0 +1,13 @@
+# Patient data and results: never commit these
+workspace/
+*.dcm
+*.nii
+*.nii.gz
+*.mha
+*.nrrd
+
+# Per-computer files
+.venv/
+local_settings.json
+__pycache__/
+*.py[cod]
