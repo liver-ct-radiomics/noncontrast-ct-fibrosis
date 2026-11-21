@@ -15,6 +15,8 @@ Public code repository accompanying the manuscript:
 3. **`inner_loop_sensitivity.py`** — Additional fully nested sensitivity analysis in which clinical expansion size (`m = 0` to `4` beyond FIB-4), radiomic subset size (`K = 0` to `5`), and the L2 penalty `C` (`0.01` to `10.0`) are jointly selected by 5-fold inner cross-validation under both the one-standard-error (1-SE) rule and the maximum inner-AUC rule. Writes `inner_loop_sensitivity_summary.csv`.
 4. **`segmentation_reproducibility.py`** — Blinded dual-reader whole-liver segmentation reproducibility analysis (`TotalSegmentator` vs. Reader 1 vs. Reader 2 across 30 examinations), computing pairwise spatial overlap (`Dice`, `IoU`, `ASSD`, `HD95`) and `ICC(2,1)` with 95% confidence intervals for liver volume, mean parenchymal attenuation, and the four `K = 1` to `4` consensus radiomic features (`S1 Table`).
 
+   Note: this script does not call PyRadiomics. The substudy tool runs in a standalone Python environment outside 3D Slicer, and the four features are computed with NumPy/SciPy from the corresponding definitions at the native voxel spacing (no resampling to 1 × 1 × 1 mm): sphericity from a marching-cubes surface area; undecimated 3D Coiflet-1 filtering; a fixed bin width of 25; 26-connected gray-level zones; and 13-direction symmetric 3D gray-level co-occurrence. Values are therefore not numerically identical to the main PyRadiomics extraction.
+
 ## Usage
 
 Install dependencies:
