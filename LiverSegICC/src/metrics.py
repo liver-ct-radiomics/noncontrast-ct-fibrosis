@@ -230,7 +230,7 @@ def consensus_radiomics_for_case(ct, masks, spacing_xyz):
     for m in masks.values():
         union |= m.astype(bool)
     if not union.any():
-        return {k(empty_feats) for k in masks}
+        return {k: dict(empty_feats) for k in masks}
 
     coords = np.argwhere(union)
     pad = 6

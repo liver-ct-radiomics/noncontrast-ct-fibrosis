@@ -15,7 +15,7 @@ This is research software and is not intended for clinical diagnostic use.
 ## Requirements
 
 - Windows 10 or 11
-- Python 3.11 or newer (`setup.bat` creates a local `.venv` and installs dependencies)
+- Python 3.11 or 3.12 (`setup.bat` creates a local `.venv` and installs dependencies)
 - Optional NVIDIA GPU for `TotalSegmentator` inference (not required if reviewing pre-segmented workspaces)
 
 ## Getting started
@@ -56,7 +56,7 @@ Select the active reader (`AUTH1` or `AUTH2`). Each reader starts from an indepe
 | Undo, redo, save | | `Ctrl+Z`, `Ctrl+Y`, `Ctrl+S` |
 | Window presets, mask, contour | | `1` `2` `3`, `M`, `C` |
 
-Mark each reviewed examination as **DONE** when complete (unmodified `TS` masks accepted as-is are automatically logged as unmodified).
+Mark each reviewed examination as **DONE** when complete.
 
 ### 3. Reproducibility analysis
 
@@ -69,7 +69,7 @@ Click **Run analysis** once both readers have completed review. Outputs are writ
 | `overlap_per_case.csv` | Per-case pairwise `Dice`, `IoU`, `HD95`, `ASSD`, and volume difference |
 | `overlap_summary.csv` | Summary statistics across pairs (`S1 Table` upper panel) |
 | `icc_summary.csv` | Pairwise and three-way `ICC(2,1)` and `ICC(3,1)` with 95% CIs and Bland-Altman limits (`S1 Table` lower panel) |
-| `case_details.csv` | Unmodified acceptance flags, voxel edits, and acquisition metadata |
+| `case_details.csv` | Reader effort (active time, voxels added/removed, strokes) and acquisition metadata |
 | `bland_altman_*.png` | Bland-Altman agreement plots |
 | `excel/` | Locale-formatted CSV exports |
 

@@ -67,7 +67,7 @@ def scan_folder(root, progress=None):
 
     root = Path(root)
     files = [p for p in root.rglob("*") if p.is_file()]
-    series[str, dict] = {}
+    series = {}
     for i, f in enumerate(files):
         if progress and i % 200 == 0:
             progress(i, len(files))
