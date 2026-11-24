@@ -145,6 +145,15 @@ def youden_threshold(y_true, y_prob):
     return thresholds[np.argmax(tpr - fpr)]
 
 
+def _fast_auc(y_true, y_prob):
+    """Exact Mann-Whitney U AUC (with average ranks for ties), identical to
+    sklearn.metrics.roc_auc_score without per-call validation overhead."""
+    n1 = int(np.sum(y_true))
+    n0 = len(y_true) - n1
+    ranks = stats.rankdata(y_prob, method="average")
+    return float((np.sum(ranks[y_true == 1]) - n1 * (n1 + 1) * 0.5) / (n1 * n0))
+
+
 def bootstrap_auc_ci(y_true, y_prob, n_boot=N_BOOT, seed=SEED):
     np.random.seed(seed)
     aucs = []
@@ -162,8 +171,8 @@ def combined_repeat_auc_ci(y_true, rep_probs, n_boot=N_BOOT, seed=SEED):
     and between-repeat variance (B) across R repeats: T = W_bar + (1 + 1/R) * B."""
     r_count, n = rep_probs.shape
     p_pool = np.mean(rep_probs, axis=0)
-    auc_pool = roc_auc_score(y_true, p_pool)
-    rep_aucs = np.array([roc_auc_score(y_true, rep_probs[r]) for r in range(r_count)])
+    auc_pool = _fast_auc(y_true, p_pool)
+    rep_aucs = np.array([_fast_auc(y_true, rep_probs[r]) for r in range(r_count)])
     b_var = np.var(rep_aucs, ddof=1)
     w_vars = []
     for r in range(r_count):
@@ -171,9 +180,10 @@ def combined_repeat_auc_ci(y_true, rep_probs, n_boot=N_BOOT, seed=SEED):
         b_aucs = []
         for _ in range(n_boot):
             idx = rs.randint(0, n, n)
-            if len(np.unique(y_true[idx])) < 2:
+            yb = y_true[idx]
+            if yb.sum() == 0 or yb.sum() == n:
                 continue
-            b_aucs.append(roc_auc_score(y_true[idx], rep_probs[r, idx]))
+            b_aucs.append(_fast_auc(yb, rep_probs[r, idx]))
         w_vars.append(np.var(b_aucs, ddof=1))
     total_var = float(np.mean(w_vars)) + (1.0 + 1.0 / r_count) * float(b_var)
     half_width = 1.96 * np.sqrt(total_var)
@@ -290,11 +300,15 @@ def tune_l2_c(X_tr_df, y_tr, cont_cols, outer_idx):
         sc = RobustScaler()
         X_in_tr[cont_cols] = sc.fit_transform(X_in_tr[cont_cols])
         X_in_val[cont_cols] = sc.transform(X_in_val[cont_cols])
+        arr_tr = X_in_tr.values
+        arr_val = X_in_val.values
+        y_in_tr = y_tr[tr_in]
+        y_in_val = y_tr[val_in]
         for c_val in C_GRID:
             clf = LogisticRegression(penalty="l2", C=c_val, solver="liblinear", random_state=SEED)
-            clf.fit(X_in_tr.values, y_tr[tr_in])
-            p_val = clf.predict_proba(X_in_val.values)[:, 1]
-            scores[c_val].append(roc_auc_score(y_tr[val_in], p_val))
+            clf.fit(arr_tr, y_in_tr)
+            p_val = clf.predict_proba(arr_val)[:, 1]
+            scores[c_val].append(roc_auc_score(y_in_val, p_val))
     mean_scores = {c: np.mean(v) for c, v in scores.items()}
     return max(mean_scores, key=mean_scores.get)
 
@@ -327,17 +341,15 @@ def format_modal_c(c_values):
 
 
 def summary_row(name, k, y, p_pool, rep_probs, tr_auc=np.nan, sens=np.nan, spec=np.nan,
-                thr_mean=np.nan, thr_sd=np.nan):
+                thr_mean=np.nan, thr_sd=np.nan, include_combined_ci=False):
     ci_l, ci_u = bootstrap_auc_ci(y, p_pool)
-    comb_l, comb_u = combined_repeat_auc_ci(y, rep_probs)
     rep_aucs = [roc_auc_score(y, rep_probs[r]) for r in range(rep_probs.shape[0])]
     cal_int, cal_slp = calibration_intercept_slope(y, p_pool)
-    return {
+    out = {
         "Regime": name, "K": k,
         "Train_AUC": tr_auc,
         "Pooled_OOF_AUC": roc_auc_score(y, p_pool),
         "CI_95": f"{ci_l:.3f}-{ci_u:.3f}",
-        "Combined_Var_CI_95": f"{comb_l:.3f}-{comb_u:.3f}",
         "Repeat_AUC_Mean": np.mean(rep_aucs), "Repeat_AUC_SD": np.std(rep_aucs),
         "Sens_pct": sens, "Spec_pct": spec, "Bal_Acc_pct": 0.5 * (sens + spec),
         "Thr_Mean": thr_mean, "Thr_SD": thr_sd,
@@ -346,6 +358,10 @@ def summary_row(name, k, y, p_pool, rep_probs, tr_auc=np.nan, sens=np.nan, spec=
         "HL_p": hosmer_lemeshow(y, p_pool),
         "Pred_Min": p_pool.min(), "Pred_Max": p_pool.max(), "Pred_Mean": p_pool.mean(),
     }
+    if include_combined_ci:
+        comb_l, comb_u = combined_repeat_auc_ci(y, rep_probs)
+        out["Combined_Var_CI_95"] = f"{comb_l:.3f}-{comb_u:.3f}"
+    return out
 
 
 def evaluate_all_tracks(df, y, radiomic_cols):
@@ -516,6 +532,7 @@ def evaluate_all_tracks(df, y, radiomic_cols):
         "ClinicalCore", 0, y, np.mean(oof_clin, axis=0), oof_clin,
         tr_auc=np.mean(tr_t2["Clinical model 2"]), sens=sens_clin, spec=spec_clin,
         thr_mean=np.mean(thr_t2["Clinical model 2"]), thr_sd=np.std(thr_t2["Clinical model 2"]),
+        include_combined_ci=True,
     )
     clin_row["Modal_C"] = ""
     rows = [clin_row]
@@ -528,6 +545,7 @@ def evaluate_all_tracks(df, y, radiomic_cols):
                 r_name, k, y, np.mean(oof_probs[r_name][k], axis=0), oof_probs[r_name][k],
                 tr_auc=np.mean(tr_aucs[r_name][k]), sens=sens, spec=spec,
                 thr_mean=np.mean(thrs[r_name][k]), thr_sd=np.std(thrs[r_name][k]),
+                include_combined_ci=True,
             )
             row["Modal_C"] = format_modal_c(tuned_cs[r_name][k])
             rows.append(row)
