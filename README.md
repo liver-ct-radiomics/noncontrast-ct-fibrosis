@@ -6,7 +6,7 @@ Public code repository accompanying the manuscript:
 
 ## Repository Contents
 
-1. **`nested_cv_pipeline.py`** - Unified 20-repeat 5-fold nested cross-validation pipeline reproducing all modeling tables and incremental-value analyses:
+1. **`nested_cv_pipeline.py`** - Unified modeling pipeline (5-fold stratified nested cross-validation repeated 20 times) reproducing all modeling tables and incremental-value analyses:
    - `Table 2`: A priori serum indices (`APRI`, `FIB-4`) and sequential clinical models (`Clinical models 2-5`, with `FIB-4 + sex` carried forward as the selected clinical core).
    - `Table 3`: Standalone radiomic-only models (`2-5` parameters; training-fold unsupervised pre-filtering and L1 path ranking).
    - `Table 4`: Unanchored joint clinical and radiomic models (`3-7` parameters; training-fold pre-filtering and cohort-prefiltered check).

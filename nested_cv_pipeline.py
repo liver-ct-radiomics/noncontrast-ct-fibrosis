@@ -3,7 +3,7 @@ non-contrast CT liver fibrosis staging (reproduces Tables 2-5, out-of-fold
 probability tables for Figs 3-5 and S1 Fig, full-cohort descriptive LRT, and
 out-of-fold DeLong / bootstrap IDI / continuous NRI comparisons).
 
-Models evaluated on identical 20-repeat 5-fold stratified outer splits:
+Models evaluated using 5-fold stratified nested cross-validation repeated 20 times (identical outer splits):
   - Table 2: A priori serum indices (APRI, FIB-4) and sequential clinical models
     (Clinical models 2-5; FIB-4 + sex carried forward as the clinical core).
   - Table 3: Standalone radiomic-only models (2-5 parameters; training-fold
