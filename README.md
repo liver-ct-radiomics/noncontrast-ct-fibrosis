@@ -6,14 +6,19 @@ Public code repository accompanying the manuscript:
 
 ## Repository Contents
 
-1. **`nested_cv_pipeline.py`** — Main 20-repeat 5-fold nested cross-validation pipeline. Evaluates a priori FIB-4, the selected clinical core (`FIB-4 + sex`), exploratory post-selection consensus hybrid models (Regime 1), and within-fold L1 selection models with cohort-level (Regime 2) and training-fold-only (Regime 3) unsupervised pre-filtering across `K = 1` to `5` radiomic features. Writes `nested_cv_summary.csv`, `oof_predictions.csv`, `oof_predictions_all_k1_to_5.csv`, and `incremental_value.csv`.
-2. **`plot_figures.py`** — Generates main and supplementary evaluation figures from the out-of-fold probability tables produced by `nested_cv_pipeline.py` (both `.png` and 300-dpi LZW `.tif`, plus `dca_thresholds.csv`):
+1. **`nested_cv_pipeline.py`** - Unified 20-repeat 5-fold nested cross-validation pipeline reproducing all modeling tables and incremental-value analyses:
+   - `Table 2`: A priori serum indices (`APRI`, `FIB-4`) and sequential clinical models (`Clinical models 2-5`, with `FIB-4 + sex` carried forward as the selected clinical core).
+   - `Table 3`: Standalone radiomic-only models (`2-5` parameters; training-fold unsupervised pre-filtering and L1 path ranking).
+   - `Table 4`: Unanchored joint clinical and radiomic models (`3-7` parameters; training-fold pre-filtering and cohort-prefiltered check).
+   - `Table 5`: Clinically anchored hybrid models (`K = 1` to `5` radiomic features) across exploratory post-selection consensus evaluation (Regime 1) and dynamic within-fold L1 selection with cohort-level (Regime 2) and training-fold-only (Regime 3) unsupervised pre-filtering, plus top-5 cross-fold selection frequencies.
+   - Descriptive full-cohort unpenalized likelihood-ratio test (`LRT`) and out-of-fold paired DeLong test, IDI, and continuous NRI comparisons at `K = 4`.
+2. **`plot_figures.py`** - Generates main and supplementary evaluation figures from the out-of-fold probability tables produced by `nested_cv_pipeline.py` (both `.png` and 300-dpi LZW `.tif`, plus `dca_thresholds.csv`):
    - `Fig3`: Flexible LOESS calibration curves, 95% bootstrap bands, and predicted probability histograms at `K = 4`.
    - `Fig4`: Decision curve analysis at `K = 4`.
    - `Fig5`: Out-of-fold receiver operating characteristic (ROC) curves at `K = 4`.
    - `S1_Fig`: Supplementary `5 x 2` panel of flexible LOESS calibration curves and decision curves across `K = 1` to `5`.
-3. **`inner_loop_sensitivity.py`** — Additional fully nested sensitivity analysis in which clinical expansion size (`m = 0` to `4` beyond FIB-4), radiomic subset size (`K = 0` to `5`), and the L2 penalty `C` (`0.01` to `10.0`) are jointly selected by 5-fold inner cross-validation under both the one-standard-error (1-SE) rule and the maximum inner-AUC rule. Writes `inner_loop_sensitivity_summary.csv`.
-4. **`LiverSegICC/`** — Standalone desktop workflow and analysis application used for the 30-patient blinded dual-reader whole-liver segmentation reproducibility substudy (`TotalSegmentator` vs. Reader 1 vs. Reader 2; `S1 Table`), including DICOM import, blinded slice-wise mask review, spatial overlap metrics (`Dice`, `IoU`, `ASSD`, `HD95`), and `ICC(2,1)` analysis. Full setup and usage instructions are provided in [`LiverSegICC/README.md`](LiverSegICC/README.md).
+3. **`inner_loop_sensitivity.py`** - Additional fully nested sensitivity analysis in which clinical expansion size (`m = 0` to `4` beyond FIB-4), radiomic subset size (`K = 0` to `5`), and the L2 penalty `C` (`0.01` to `10.0`) are jointly selected by 5-fold inner cross-validation under both the one-standard-error (1-SE) rule and the maximum inner-AUC rule.
+4. **`LiverSegICC/`** - Standalone desktop workflow and analysis script used for the 30-patient blinded dual-reader whole-liver segmentation reproducibility substudy (`TotalSegmentator` vs. Reader 1 vs. Reader 2; `S1 Table`), including DICOM import, blinded slice-wise mask review, spatial overlap metrics (`Dice`, `IoU`, `ASSD`, `HD95`), and `ICC(2,1)` analysis. Full setup and usage instructions are provided in [`LiverSegICC/README.md`](LiverSegICC/README.md).
 
    Note: `LiverSegICC` runs in a standalone Python environment outside 3D Slicer and does not call PyRadiomics. The four `K = 1–4` consensus features are computed with NumPy/SciPy from the corresponding definitions at the native voxel spacing (no resampling to 1 × 1 × 1 mm): sphericity from a marching-cubes surface area; undecimated 3D Coiflet-1 filtering; a fixed bin width of 25; 26-connected gray-level zones; and 13-direction symmetric 3D gray-level co-occurrence. Values are therefore not numerically identical to the main PyRadiomics extraction.
 
